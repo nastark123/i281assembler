@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include "instructions.h"
@@ -16,6 +17,33 @@ const char *segments[] = {".data", ".code"};
 const char *instructions[] = {"NOOP", "INPUTC", "INPUTCF", "INPUTD", "INPUTDF", "MOVE", "LOADI", "LOADP", "ADD", "ADDI", "SUB", "SUBI",
                                 "LOAD", "LOADF", "STORE", "STOREF", "SHIFTL", "SHIFTR", "CMP", "JUMP", "BRE", "BRZ", "BRNE", "BRNZ",
                                 "BRG", "BRGE"};
+
+#define NOOP 0x00
+#define INPUTC 0x01
+#define INPUTCF 0x02
+#define INPUTD 0x03
+#define INPUTDF 0x04
+#define MOVE 0x05
+#define LOADI 0x06
+#define LOADP 0x07
+#define ADD 0x08
+#define ADDI 0x09
+#define SUB 0x0A
+#define SUBI 0x0B
+#define LOAD 0x0C
+#define LOADF 0x0D
+#define STORE 0x0E
+#define STOREF 0x0F
+#define SHIFTL 0x10
+#define SHIFTR 0x11
+#define CMP 0x12
+#define JUMP 0x13
+#define BRE 0x14
+#define BRZ 0x15
+#define BRNE 0x16
+#define BRNZ 0x17
+#define BRG 0x18
+#define BRGE 0x19
 
 #define NUM_INSTRUCTIONS 26
 
@@ -91,8 +119,145 @@ int parse_dseg(char **lines, int offset, int lines_len, DataLabel *labels, int l
     return labels_index;
 }
 
+// converts a string instruction to an integer id
+int inst_to_id(char *inst) {
+    for(int i = 0; i < NUM_INSTRUCTIONS; i++) {
+        if(strcmp(inst, instructions[i]) == 0) return i;
+    }
+
+    return -1;
+}
+
 void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *instructions, int inst_len) {
     offset++; // skip the segment declaration
+    for(int i = offset; i < lines_len; i++) {
+        char inst_str[32];
+        sscanf(lines[i], " %s ", inst_str);
+        int id = inst_to_id(inst_str);
+        if(id < 0) {
+            printf("Invalid instruction found at line %d\n", i + 1); // add 1 to i since we start line indexing at 0, whereas the text editor starts at 1
+            exit(-1);
+        }
+
+        ParsedInstruction inst;
+
+        bool success = false;
+
+        switch(id) {
+            case NOOP:
+                parse_noop(lines[i], i, &inst);
+                break;
+
+            case INPUTC:
+                parse_inputc(lines[i], i, &inst);
+                break;
+
+            case INPUTCF:
+                parse_inputcf(lines[i], i, &inst);
+                break;
+
+
+            case INPUTD:
+                parse_inputd(lines[i], i, &inst);
+                break;
+
+
+            case INPUTDF:
+                parse_inputdf(lines[i], i, &inst);
+                break;
+
+
+            case MOVE:
+                parse_move(lines[i], i, &inst);
+                break;
+
+
+            case LOADI:
+                parse_loadi(lines[i], i, &inst);
+                break;
+
+            case LOADP:
+                parse_loadp(lines[i], i, &inst);
+                break;
+
+            case ADD:
+                parse_add(lines[i], i, &inst);
+                break;
+
+            case ADDI:
+                parse_addi(lines[i], i, &inst);
+                break;
+
+            case SUB:
+                parse_sub(lines[i], i, &inst);
+                break;
+
+            case SUBI:
+                parse_subi(lines[i], i, &inst);
+                break;
+
+            case LOAD:
+                parse_load(lines[i], i, &inst);
+                break;
+
+            case LOADF:
+                parse_loadf(lines[i], i, &inst);
+                break;
+
+            case STORE:
+                parse_store(lines[i], i, &inst);
+                break;
+
+            case STOREF:
+                parse_storef(lines[i], i, &inst);
+                break;
+
+            case SHIFTL:
+                parse_shiftl(lines[i], i, &inst);
+                break;
+
+            case SHIFTR:
+                parse_shiftr(lines[i], i, &inst);
+                break;
+
+            case CMP:
+                parse_cmp(lines[i], i, &inst);
+                break;
+
+            case JUMP:
+                parse_jump(lines[i], i, &inst);
+                break;
+
+            case BRE:
+                parse_bre(lines[i], i, &inst);
+                break;
+
+            case BRZ:
+                parse_brz(lines[i], i, &inst);
+                break;
+
+            case BRNE:
+                parse_brne(lines[i], i, &inst);
+                break;
+
+            case BRNZ:
+                parse_brnz(lines[i], i, &inst);
+                break;
+
+            case BRG:
+                parse_brg(lines[i], i, &inst);
+                break;
+
+            case BRGE:
+                parse_brge(lines[i], i, &inst);
+                break;
+
+            default: // not sure how we'd ever get to here, but just in case
+                printf("Error on line %d, unrecognized instruction\n", i + 1);
+                exit(-1);
+
+        }
+    }
 }
 
 void replace_dseg_labels(char **lines, int offset, int lines_len, DataLabel *labels, int labels_len) {
@@ -239,14 +404,14 @@ int main(int argc, char *argv[]) {
         if(strncmp(lines[i], segments[1], strlen(segments[1])) == 0) {
             replace_dseg_labels(lines, i, num_lines, label, num_labels);
             num_branches = parse_branch_dest(lines, i, num_lines, dest, 16);
-            // parse_cseg(lines, i, num_lines, inst, 64);
+            parse_cseg(lines, i, num_lines, inst, 64);
         }
     }
 
-    printf("Found %d branches\n", num_branches);
-    for(int i = 0; i < num_branches; i++) {
-        printf("Label: %s\nPC: %d\n", dest[i].name, dest[i].address);
-    }
+    // printf("Found %d branches\n", num_branches);
+    // for(int i = 0; i < num_branches; i++) {
+    //     printf("Label: %s\nPC: %d\n", dest[i].name, dest[i].address);
+    // }
 
     return 0;
 }

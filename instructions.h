@@ -1,6 +1,9 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -13,56 +16,56 @@ typedef struct {
     uint16_t opcode;
 } ParsedInstruction;
 
-void parse_noop(char *line, ParsedInstruction *inst);
+bool parse_noop(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_inputc(char *line, ParsedInstruction *inst);
+bool parse_inputc(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_inputcf(char *line, ParsedInstruction *inst);
+bool parse_inputcf(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_inputd(char *line, ParsedInstruction *inst);
+bool parse_inputd(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_inputdf(char *line, ParsedInstruction *inst);
+bool parse_inputdf(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_move(char *line, ParsedInstruction *inst);
+bool parse_move(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_loadi(char *line, ParsedInstruction *inst);
+bool parse_loadi(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_loadp(char *line, ParsedInstruction *inst);
+bool parse_loadp(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_add(char *line, ParsedInstruction *inst);
+bool parse_add(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_addi(char *line, ParsedInstruction *inst);
+bool parse_addi(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_sub(char *line, ParsedInstruction *inst);
+bool parse_sub(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_subi(char *line, ParsedInstruction *inst);
+bool parse_subi(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_load(char *line, ParsedInstruction *inst);
+bool parse_load(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_loadf(char *line, ParsedInstruction *inst);
+bool parse_loadf(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_store(char *line, ParsedInstruction *inst);
+bool parse_store(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_storef(char *line, ParsedInstruction *inst);
+bool parse_storef(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_shiftl(char *line, ParsedInstruction *inst);
+bool parse_shiftl(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_shiftr(char *line, ParsedInstruction *inst);
+bool parse_shiftr(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_cmp(char *line, ParsedInstruction *inst);
+bool parse_cmp(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_jump(char *line, ParsedInstruction *inst);
+bool parse_jump(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_bre(char *line, ParsedInstruction *inst);
+bool parse_bre(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_brz(char *line, ParsedInstruction *inst);
+bool parse_brz(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_brne(char *line, ParsedInstruction *inst);
+bool parse_brne(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_brnz(char *line, ParsedInstruction *inst);
+bool parse_brnz(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_brg(char *line, ParsedInstruction *inst);
+bool parse_brg(char *line, int line_num, ParsedInstruction *inst);
 
-void parse_brge(char *line, ParsedInstruction *inst);
+bool parse_brge(char *line, int line_num, ParsedInstruction *inst);
 
 #endif
