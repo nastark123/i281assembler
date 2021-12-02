@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "instructions.h"
 #include "vector.h"
 
 #define DSEG_SIZE 16
@@ -24,11 +25,6 @@ typedef struct {
     char *name;
     uint8_t start_address;
 } DataLabel;
-
-typedef struct {
-    char *inst;
-    uint16_t opcode;
-} ParsedInstruction;
 
 typedef struct {
     char *name;
