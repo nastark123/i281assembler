@@ -30,6 +30,11 @@ typedef struct {
     uint16_t opcode;
 } ParsedInstruction;
 
+typedef struct {
+    char *name;
+    uint8_t address;
+} BranchDest;
+
 // vector that will store the data segment
 IntVector dseg;
 
@@ -90,19 +95,21 @@ int parse_dseg(char **lines, int offset, int lines_len, DataLabel *labels, int l
     return labels_index;
 }
 
-// TODO clean up this function, it seems too lengthy
-void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *instructions, int inst_len, DataLabel *labels, int labels_len) {
+void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *instructions, int inst_len) {
     offset++; // skip the segment declaration
+}
+
+void replace_dseg_labels(char **lines, int offset, int lines_len, DataLabel *labels, int labels_len) {
+    offset++; // skip the segment declaration for the code segment
 
     // replace all data symbol names with their address
-    // TODO move this to its own function
     for(int i = offset; i < lines_len; i++) {
         for(int j = 0; j < labels_len; j++) {
             char *c = strstr(lines[i], labels[j].name);
             if(c != NULL) {
                 // this seems sketchy, but oh well
                 char *edited_line = malloc(sizeof(char) * (strlen(lines[i]) + 3)); // + 3 is here since the maximum number of chars an address can take is 3, and the minimum for a label is 1, also need the null terminator
-                
+
                 // copy the contents of the line before the symbol
                 strncpy(edited_line, lines[i], (c - lines[i]) / sizeof(char));
                 edited_line[(c - lines[i]) / sizeof(char)] = '\0';
@@ -110,10 +117,41 @@ void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *inst
                 // // concatenate the address
                 sprintf(edited_line, "%s%d%s", edited_line, labels[j].start_address, c + (strlen(labels[j].name) * sizeof(char)));
 
-                printf("Line %d: %s\n", i, edited_line);
+                free(lines[i]);
+                lines[i] = edited_line;
+
+                // printf("Line %d: %s\n", i, edited_line);
             }
         }
     }
+}
+
+int parse_branch_dest(char **lines, int offset, int lines_len, BranchDest *dest, int dest_len) {
+    offset++; // skip the code segment declaration
+
+    int dest_index = 0; // current destination index
+    for(int i = offset; i < lines_len; i++) {
+        char *c = strchr(lines[i], ':'); // if a line contains a colon, it has a branch label
+
+        if(c != NULL) {
+
+            size_t label_len = (c - lines[i]) / sizeof(char);
+
+            dest[dest_index].name = malloc(sizeof(char) * (label_len + 1));
+            strncpy(dest[dest_index].name, lines[i], label_len);
+            dest[dest_index].name[label_len] = '\0';
+
+            dest[dest_index].address = i - offset;
+
+            // edit the line to remove the label, leaving only the assembly instruction
+            strcpy(lines[i], c + 1); // add 1 to skip the colon
+            lines[i] = realloc(lines[i], sizeof(char) * (strlen(lines[i]) + 1));
+
+            dest_index++;
+        }
+    }
+
+    return dest_index;
 }
 
 int main(int argc, char *argv[]) {
@@ -192,13 +230,26 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // array to store parsed instructions
     ParsedInstruction *inst = malloc(sizeof(ParsedInstruction) * 64);
+    int num_insts = 0;
+
+    // array to store branch destinations
+    BranchDest *dest = malloc(sizeof(BranchDest) * 16);
+    int num_branches = 0;
 
     // look for a code segment to parse code
     for(int i = 0; i < num_lines; i++) {
         if(strncmp(lines[i], segments[1], strlen(segments[1])) == 0) {
-            parse_cseg(lines, i, num_lines, inst, 64, label, num_labels);
+            replace_dseg_labels(lines, i, num_lines, label, num_labels);
+            num_branches = parse_branch_dest(lines, i, num_lines, dest, 16);
+            // parse_cseg(lines, i, num_lines, inst, 64);
         }
+    }
+
+    printf("Found %d branches\n", num_branches);
+    for(int i = 0; i < num_branches; i++) {
+        printf("Label: %s\nPC: %d\n", dest[i].name, dest[i].address);
     }
 
     return 0;
