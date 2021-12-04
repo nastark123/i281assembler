@@ -128,15 +128,17 @@ int inst_to_id(char *inst) {
     return -1;
 }
 
-void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *instructions, int inst_len) {
+int parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *instructions, int inst_len) {
     offset++; // skip the segment declaration
+
+    int instructions_index = 0;
     for(int i = offset; i < lines_len; i++) {
         char inst_str[32];
         memset(inst_str, 0, sizeof(char) * 32);
         sscanf(lines[i], " %s ", inst_str);
 
         if(inst_str[0] == '\0') continue; // skip blank lines
-        
+
         int id = inst_to_id(inst_str);
         if(id < 0) {
             printf("Invalid instruction found at line %d\n", i + 1); // add 1 to i since we start line indexing at 0, whereas the text editor starts at 1
@@ -258,7 +260,11 @@ void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *inst
         }
 
         if(!success) exit(-1);
+
+        instructions[instructions_index++] = inst;
     }
+
+    return instructions_index;
 }
 
 void replace_dseg_labels(char **lines, int offset, int lines_len, DataLabel *labels, int labels_len) {
@@ -338,6 +344,16 @@ int parse_branch_dest(char **lines, int offset, int lines_len, BranchDest *dest,
     }
 
     return dest_index;
+}
+
+void print_bin_file(FILE *f, int bin) {
+    // if we are not on the least significant bit, recursively call the function
+  // with the current number divided by 2 (right shifted by 1)
+  if((bin >> 1) > 0) print_bin_file(f, bin >> 1);
+
+  // retrieve the digit
+  int digit = bin % 2;
+  fprintf(f, "%d", digit);
 }
 
 int main(int argc, char *argv[]) {
@@ -430,12 +446,63 @@ int main(int argc, char *argv[]) {
             replace_dseg_labels(lines, i, num_lines, label, num_labels);
             num_branches = parse_branch_dest(lines, i, num_lines, dest, 16);
 
-            for(int j = 0; j < num_lines; j++) {
-                printf("%d: %s\n", j + 1, lines[j]);
-            }
-            parse_cseg(lines, i, num_lines, inst, 64);
+            // for(int j = 0; j < num_lines; j++) {
+            //     printf("%d: %s\n", j + 1, lines[j]);
+            // }
+            num_insts = parse_cseg(lines, i, num_lines, inst, 64);
         }
     }
+
+    // write the result to a file
+    char *filename = malloc(sizeof(char) * (strlen(argv[1]) + 1));
+    strcpy(filename, argv[1]);
+    char *ext = strstr(filename, ".asm");
+    strcpy(ext, ".bin");
+
+    FILE *out_file = fopen(filename, "w+");
+    fprintf(out_file, "-----MACHINE CODE-----\n");
+    for(int i = 0; i < num_insts; i++) {
+        for(int j = 0; j < 4; j++) {
+            if(inst[i].opcode & (1 << (15 - j))) fputc('1', out_file);
+            else fputc('0', out_file);
+        }
+        fputc('_', out_file);
+        for(int j = 0; j < 2; j++) {
+            if(inst[i].opcode & (1 << (11 - j))) fputc('1', out_file);
+            else fputc('0', out_file);
+        }
+        fputc('_', out_file);
+        for(int j = 0; j < 2; j++) {
+            if(inst[i].opcode & (1 << (9 - j))) fputc('1', out_file);
+            else fputc('0', out_file);
+        }
+        fputc('_', out_file);
+        for(int j = 0; j < 8; j++) {
+            if(inst[i].opcode & (1 << (7 - j))) fputc('1', out_file);
+            else fputc('0', out_file);
+        }
+        fputc('\n', out_file);
+    }
+
+    fputc('\n', out_file);
+
+    fprintf(out_file, "-----DATA SEGMENT-----\n");
+    if(num_labels > 0) {
+        fputc('[', out_file);
+        // copy all but the last data label
+        for(int i = 0; i < num_labels - 1; i++) {
+            for(int j = 0; j < label[i].len; j++) {
+                fprintf(out_file, "%hhu, ", label[i].data[j]);
+            }
+        }
+        // copy the last data label avoid adding an extra comma
+        for(int i = 0; i < label[num_labels - 1].len - 1; i++) {
+            fprintf(out_file, "%hhu, ", label[num_labels - 1].data[i]);
+        }
+        fprintf(out_file, "%d]\n", label[num_labels - 1].data[label[num_labels - 1].len]);
+    }
+
+    fclose(out_file);
 
     // printf("Found %d branches\n", num_branches);
     // for(int i = 0; i < num_branches; i++) {
