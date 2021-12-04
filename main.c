@@ -325,7 +325,8 @@ int parse_branch_dest(char **lines, int offset, int lines_len, BranchDest *dest,
                 edited_line[(c - lines[i]) / sizeof(char)] = '\0';
 
                 // concatenate the address
-                sprintf(edited_line, "%s%d%s", edited_line, dest[j].address, c + (strlen(dest[j].name) * sizeof(char)));
+                // the value passed to the %d specifier is the destination address minus the current program counter value - 1
+                sprintf(edited_line, "%s%d%s", edited_line, dest[j].address - i + offset - 1, c + (strlen(dest[j].name) * sizeof(char)));
 
                 free(lines[i]);
                 lines[i] = edited_line;
