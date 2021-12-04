@@ -132,7 +132,11 @@ void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *inst
     offset++; // skip the segment declaration
     for(int i = offset; i < lines_len; i++) {
         char inst_str[32];
+        memset(inst_str, 0, sizeof(char) * 32);
         sscanf(lines[i], " %s ", inst_str);
+
+        if(inst_str[0] == '\0') continue; // skip blank lines
+        
         int id = inst_to_id(inst_str);
         if(id < 0) {
             printf("Invalid instruction found at line %d\n", i + 1); // add 1 to i since we start line indexing at 0, whereas the text editor starts at 1
@@ -145,118 +149,115 @@ void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *inst
 
         switch(id) {
             case NOOP:
-                parse_noop(lines[i], i + 1, &inst);
+                success = parse_noop(lines[i], i + 1, &inst);
                 break;
 
             case INPUTC:
-                parse_inputc(lines[i], i + 1, &inst);
+                success = parse_inputc(lines[i], i + 1, &inst);
                 break;
 
             case INPUTCF:
-                parse_inputcf(lines[i], i + 1, &inst);
+                success = parse_inputcf(lines[i], i + 1, &inst);
                 break;
-
 
             case INPUTD:
-                parse_inputd(lines[i], i + 1, &inst);
+                success = parse_inputd(lines[i], i + 1, &inst);
                 break;
-
 
             case INPUTDF:
-                parse_inputdf(lines[i], i + 1, &inst);
+                success = parse_inputdf(lines[i], i + 1, &inst);
                 break;
-
 
             case MOVE:
-                parse_move(lines[i], i + 1, &inst);
+                success = parse_move(lines[i], i + 1, &inst);
                 break;
 
-
             case LOADI:
-                parse_loadi(lines[i], i + 1, &inst);
+                success = parse_loadi(lines[i], i + 1, &inst);
                 break;
 
             case LOADP:
-                parse_loadp(lines[i], i + 1, &inst);
+                success = parse_loadp(lines[i], i + 1, &inst);
                 break;
 
             case ADD:
-                parse_add(lines[i], i + 1, &inst);
+                success = parse_add(lines[i], i + 1, &inst);
                 break;
 
             case ADDI:
-                parse_addi(lines[i], i + 1, &inst);
+                success = parse_addi(lines[i], i + 1, &inst);
                 break;
 
             case SUB:
-                parse_sub(lines[i], i + 1, &inst);
+                success = parse_sub(lines[i], i + 1, &inst);
                 break;
 
             case SUBI:
-                parse_subi(lines[i], i + 1, &inst);
+                success = parse_subi(lines[i], i + 1, &inst);
                 break;
 
             case LOAD:
-                parse_load(lines[i], i + 1, &inst);
+                success = parse_load(lines[i], i + 1, &inst);
                 break;
 
             case LOADF:
-                parse_loadf(lines[i], i + 1, &inst);
+                success = parse_loadf(lines[i], i + 1, &inst);
                 break;
 
             case STORE:
-                parse_store(lines[i], i + 1, &inst);
+                success = parse_store(lines[i], i + 1, &inst);
                 break;
 
             case STOREF:
-                parse_storef(lines[i], i + 1, &inst);
+                success = parse_storef(lines[i], i + 1, &inst);
                 break;
 
             case SHIFTL:
-                parse_shiftl(lines[i], i + 1, &inst);
+                success = parse_shiftl(lines[i], i + 1, &inst);
                 break;
 
             case SHIFTR:
-                parse_shiftr(lines[i], i + 1, &inst);
+                success = parse_shiftr(lines[i], i + 1, &inst);
                 break;
 
             case CMP:
-                parse_cmp(lines[i], i + 1, &inst);
+                success = parse_cmp(lines[i], i + 1, &inst);
                 break;
 
             case JUMP:
-                parse_jump(lines[i], i + 1, &inst);
+                success = parse_jump(lines[i], i + 1, &inst);
                 break;
 
             case BRE:
-                parse_bre(lines[i], i + 1, &inst);
+                success = parse_bre(lines[i], i + 1, &inst);
                 break;
 
             case BRZ:
-                parse_brz(lines[i], i + 1, &inst);
+                success = parse_brz(lines[i], i + 1, &inst);
                 break;
 
             case BRNE:
-                parse_brne(lines[i], i + 1, &inst);
+                success = parse_brne(lines[i], i + 1, &inst);
                 break;
 
             case BRNZ:
-                parse_brnz(lines[i], i + 1, &inst);
+                success = parse_brnz(lines[i], i + 1, &inst);
                 break;
 
             case BRG:
-                parse_brg(lines[i], i + 1, &inst);
+                success = parse_brg(lines[i], i + 1, &inst);
                 break;
 
             case BRGE:
-                parse_brge(lines[i], i + 1, &inst);
+                success = parse_brge(lines[i], i + 1, &inst);
                 break;
 
             default: // not sure how we'd ever get to here, but just in case
                 printf("Error on line %d, unrecognized instruction\n", i + 1);
-                exit(-1);
 
         }
+
+        if(!success) exit(-1);
     }
 }
 

@@ -15,7 +15,7 @@ bool parse_noop(char *line, int line_num, ParsedInstruction *inst) {
 
     inst->opcode = 0x0000; // noop is always an all-zero opcode
 
-    printf("0x0000\n");
+    printf("%d: 0x0000\n", line_num);
 
     return true;
 }
