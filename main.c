@@ -446,9 +446,9 @@ int main(int argc, char *argv[]) {
             replace_dseg_labels(lines, i, num_lines, label, num_labels);
             num_branches = parse_branch_dest(lines, i, num_lines, dest, 16);
 
-            // for(int j = 0; j < num_lines; j++) {
-            //     printf("%d: %s\n", j + 1, lines[j]);
-            // }
+            for(int j = 0; j < num_lines; j++) {
+                printf("%d: %s\n", j + 1, lines[j]);
+            }
             num_insts = parse_cseg(lines, i, num_lines, inst, 64);
         }
     }

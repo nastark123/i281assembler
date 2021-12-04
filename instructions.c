@@ -336,7 +336,7 @@ bool parse_store(char *line, int line_num, ParsedInstruction *inst) {
 
     char reg;
     uint8_t daddress;
-    if(sscanf(line, " %*s %c , [ %hhu ] ", &reg, &daddress) < 2) {
+    if(sscanf(line, " %*s [ %hhu ], %c ", &daddress, &reg) < 2) {
         printf("Missing register or data address for STORE instruction on line %d, compilation aborting...\n", line_num);
         return false;
     }
