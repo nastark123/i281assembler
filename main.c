@@ -145,111 +145,111 @@ void parse_cseg(char **lines, int offset, int lines_len, ParsedInstruction *inst
 
         switch(id) {
             case NOOP:
-                parse_noop(lines[i], i, &inst);
+                parse_noop(lines[i], i + 1, &inst);
                 break;
 
             case INPUTC:
-                parse_inputc(lines[i], i, &inst);
+                parse_inputc(lines[i], i + 1, &inst);
                 break;
 
             case INPUTCF:
-                parse_inputcf(lines[i], i, &inst);
+                parse_inputcf(lines[i], i + 1, &inst);
                 break;
 
 
             case INPUTD:
-                parse_inputd(lines[i], i, &inst);
+                parse_inputd(lines[i], i + 1, &inst);
                 break;
 
 
             case INPUTDF:
-                parse_inputdf(lines[i], i, &inst);
+                parse_inputdf(lines[i], i + 1, &inst);
                 break;
 
 
             case MOVE:
-                parse_move(lines[i], i, &inst);
+                parse_move(lines[i], i + 1, &inst);
                 break;
 
 
             case LOADI:
-                parse_loadi(lines[i], i, &inst);
+                parse_loadi(lines[i], i + 1, &inst);
                 break;
 
             case LOADP:
-                parse_loadp(lines[i], i, &inst);
+                parse_loadp(lines[i], i + 1, &inst);
                 break;
 
             case ADD:
-                parse_add(lines[i], i, &inst);
+                parse_add(lines[i], i + 1, &inst);
                 break;
 
             case ADDI:
-                parse_addi(lines[i], i, &inst);
+                parse_addi(lines[i], i + 1, &inst);
                 break;
 
             case SUB:
-                parse_sub(lines[i], i, &inst);
+                parse_sub(lines[i], i + 1, &inst);
                 break;
 
             case SUBI:
-                parse_subi(lines[i], i, &inst);
+                parse_subi(lines[i], i + 1, &inst);
                 break;
 
             case LOAD:
-                parse_load(lines[i], i, &inst);
+                parse_load(lines[i], i + 1, &inst);
                 break;
 
             case LOADF:
-                parse_loadf(lines[i], i, &inst);
+                parse_loadf(lines[i], i + 1, &inst);
                 break;
 
             case STORE:
-                parse_store(lines[i], i, &inst);
+                parse_store(lines[i], i + 1, &inst);
                 break;
 
             case STOREF:
-                parse_storef(lines[i], i, &inst);
+                parse_storef(lines[i], i + 1, &inst);
                 break;
 
             case SHIFTL:
-                parse_shiftl(lines[i], i, &inst);
+                parse_shiftl(lines[i], i + 1, &inst);
                 break;
 
             case SHIFTR:
-                parse_shiftr(lines[i], i, &inst);
+                parse_shiftr(lines[i], i + 1, &inst);
                 break;
 
             case CMP:
-                parse_cmp(lines[i], i, &inst);
+                parse_cmp(lines[i], i + 1, &inst);
                 break;
 
             case JUMP:
-                parse_jump(lines[i], i, &inst);
+                parse_jump(lines[i], i + 1, &inst);
                 break;
 
             case BRE:
-                parse_bre(lines[i], i, &inst);
+                parse_bre(lines[i], i + 1, &inst);
                 break;
 
             case BRZ:
-                parse_brz(lines[i], i, &inst);
+                parse_brz(lines[i], i + 1, &inst);
                 break;
 
             case BRNE:
-                parse_brne(lines[i], i, &inst);
+                parse_brne(lines[i], i + 1, &inst);
                 break;
 
             case BRNZ:
-                parse_brnz(lines[i], i, &inst);
+                parse_brnz(lines[i], i + 1, &inst);
                 break;
 
             case BRG:
-                parse_brg(lines[i], i, &inst);
+                parse_brg(lines[i], i + 1, &inst);
                 break;
 
             case BRGE:
-                parse_brge(lines[i], i, &inst);
+                parse_brge(lines[i], i + 1, &inst);
                 break;
 
             default: // not sure how we'd ever get to here, but just in case
@@ -275,7 +275,7 @@ void replace_dseg_labels(char **lines, int offset, int lines_len, DataLabel *lab
                 strncpy(edited_line, lines[i], (c - lines[i]) / sizeof(char));
                 edited_line[(c - lines[i]) / sizeof(char)] = '\0';
 
-                // // concatenate the address
+                // concatenate the address
                 sprintf(edited_line, "%s%d%s", edited_line, labels[j].start_address, c + (strlen(labels[j].name) * sizeof(char)));
 
                 free(lines[i]);
@@ -309,6 +309,29 @@ int parse_branch_dest(char **lines, int offset, int lines_len, BranchDest *dest,
             lines[i] = realloc(lines[i], sizeof(char) * (strlen(lines[i]) + 1));
 
             dest_index++;
+        }
+    }
+
+    // replace all label names with their address
+    for(int i = offset; i < lines_len; i++) {
+        for(int j = 0; j < dest_index; j++) {
+            char *c = strstr(lines[i], dest[j].name);
+            if(c != NULL) {
+                // this seems sketchy, but oh well
+                char *edited_line = malloc(sizeof(char) * (strlen(lines[i]) + 3)); // + 3 is here since the maximum number of chars an address can take is 3, and the minimum for a label is 1, also need the null terminator
+
+                // copy the contents of the line before the symbol
+                strncpy(edited_line, lines[i], (c - lines[i]) / sizeof(char));
+                edited_line[(c - lines[i]) / sizeof(char)] = '\0';
+
+                // concatenate the address
+                sprintf(edited_line, "%s%d%s", edited_line, dest[j].address, c + (strlen(dest[j].name) * sizeof(char)));
+
+                free(lines[i]);
+                lines[i] = edited_line;
+
+                // printf("Line %d: %s\n", i, edited_line);
+            }
         }
     }
 
@@ -404,6 +427,10 @@ int main(int argc, char *argv[]) {
         if(strncmp(lines[i], segments[1], strlen(segments[1])) == 0) {
             replace_dseg_labels(lines, i, num_lines, label, num_labels);
             num_branches = parse_branch_dest(lines, i, num_lines, dest, 16);
+
+            for(int j = 0; j < num_lines; j++) {
+                printf("%d: %s\n", j + 1, lines[j]);
+            }
             parse_cseg(lines, i, num_lines, inst, 64);
         }
     }

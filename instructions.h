@@ -16,6 +16,15 @@ typedef struct {
     uint16_t opcode;
 } ParsedInstruction;
 
+// convenience function to add the name as a string to a ParsedInstruction struct
+void add_inst_name(ParsedInstruction *inst, char *name);
+
+#define MIN_REG 'A'
+#define MAX_REG 'D'
+
+// convenience function to check if a character specifies a valid CPU register
+bool check_regs(char reg);
+
 bool parse_noop(char *line, int line_num, ParsedInstruction *inst);
 
 bool parse_inputc(char *line, int line_num, ParsedInstruction *inst);
