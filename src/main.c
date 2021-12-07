@@ -273,23 +273,21 @@ void replace_dseg_labels(char **lines, int offset, int lines_len, DataLabel *lab
     // replace all data symbol names with their address
     for(int i = offset; i < lines_len; i++) {
         for(int j = 0; j < labels_len; j++) {
-            char *c = strstr(lines[i], labels[j].name);
-            if(c != NULL) {
-                // this seems sketchy, but oh well
-                char *edited_line = malloc(sizeof(char) * (strlen(lines[i]) + 3)); // + 3 is here since the maximum number of chars an address can take is 3, and the minimum for a label is 1, also need the null terminator
-
-                // copy the contents of the line before the symbol
-                strncpy(edited_line, lines[i], (c - lines[i]) / sizeof(char));
-                edited_line[(c - lines[i]) / sizeof(char)] = '\0';
-
-                // concatenate the address
-                sprintf(edited_line, "%s%d%s", edited_line, labels[j].start_address, c + (strlen(labels[j].name) * sizeof(char)));
-
-                free(lines[i]);
-                lines[i] = edited_line;
-
-                // printf("Line %d: %s\n", i, edited_line);
-            }
+            // find an opening bracket on the line
+            char *open_bracket = strchr(lines[i], '[');
+            if(open_bracket == NULL) continue;
+            char *c = strstr(open_bracket, labels[j].name);
+            if(c == NULL) continue;
+                
+            // this seems sketchy, but oh well
+            char *edited_line = malloc(sizeof(char) * (strlen(lines[i]) + 3)); // + 3 is here since the maximum number of chars an address can take is 3, and the minimum for a label is 1, also need the null terminator
+            // copy the contents of the line before the symbol
+            strncpy(edited_line, lines[i], (c - lines[i]) / sizeof(char));
+            edited_line[(c - lines[i]) / sizeof(char)] = '\0';
+            // concatenate the address
+            sprintf(edited_line, "%s%d%s", edited_line, labels[j].start_address, c + (strlen(labels[j].name) * sizeof(char)));
+            free(lines[i]);
+            lines[i] = edited_line;
         }
     }
 }
