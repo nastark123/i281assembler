@@ -372,11 +372,6 @@ int main(int argc, char *argv[]) {
     create_new(&dseg, NULL, 16);
     create_new(&cseg, NULL, 64);
 
-    // find the size of the file
-    fseek(asm_file, 0, SEEK_END);
-    long length = ftell(asm_file);
-    fseek(asm_file, 0, SEEK_SET);
-
     // find number of lines in program so that we can parse line by line
     int num_lines = 0;
     char c;
@@ -438,20 +433,19 @@ int main(int argc, char *argv[]) {
 
     // array to store branch destinations
     BranchDest *dest = malloc(sizeof(BranchDest) * 16);
-    int num_branches = 0;
+    int num_dests = 0;
 
     // look for a code segment to parse code
     for(int i = 0; i < num_lines; i++) {
         if(strncmp(lines[i], segments[1], strlen(segments[1])) == 0) {
             replace_dseg_labels(lines, i, num_lines, label, num_labels);
-            num_branches = parse_branch_dest(lines, i, num_lines, dest, 16);
-
-            for(int j = 0; j < num_lines; j++) {
-                printf("%d: %s\n", j + 1, lines[j]);
-            }
+            num_dests = parse_branch_dest(lines, i, num_lines, dest, 16);
             num_insts = parse_cseg(lines, i, num_lines, inst, 64);
         }
     }
+
+    printf("Parsed %d branch destinations\n", num_dests);
+    printf("Parsed %d instructions\n", num_insts);
 
     // write the result to a file
     char *filename = malloc(sizeof(char) * (strlen(argv[1]) + 1));
@@ -499,15 +493,12 @@ int main(int argc, char *argv[]) {
         for(int i = 0; i < label[num_labels - 1].len - 1; i++) {
             fprintf(out_file, "%hhu, ", label[num_labels - 1].data[i]);
         }
-        fprintf(out_file, "%d]\n", label[num_labels - 1].data[label[num_labels - 1].len]);
+        fprintf(out_file, "%d]\n", label[num_labels - 1].data[label[num_labels - 1].len - 1]);
     }
 
     fclose(out_file);
 
-    // printf("Found %d branches\n", num_branches);
-    // for(int i = 0; i < num_branches; i++) {
-    //     printf("Label: %s\nPC: %d\n", dest[i].name, dest[i].address);
-    // }
+    printf("Wrote output to %s\n", filename);
 
     return 0;
 }

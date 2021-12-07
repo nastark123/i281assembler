@@ -15,7 +15,7 @@ bool parse_noop(char *line, int line_num, ParsedInstruction *inst) {
 
     inst->opcode = 0x0000; // noop is always an all-zero opcode
 
-    printf("%d: 0x0000\n", line_num);
+    // printf("%d: 0x0000\n", line_num);
 
     return true;
 }
@@ -32,7 +32,7 @@ bool parse_inputc(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = caddress;
     inst->opcode |= 0x1000;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -56,7 +56,7 @@ bool parse_inputcf(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= 0x1100;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -73,7 +73,7 @@ bool parse_inputd(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = daddress;
     inst->opcode |= 0x1200;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -97,7 +97,7 @@ bool parse_inputdf(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= 0x1300;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -124,7 +124,7 @@ bool parse_move(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= (reg0 - 'A') << 10;
     inst->opcode |= (reg1 - 'A') << 8;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -145,7 +145,7 @@ bool parse_loadi(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= 0x3000; // add the opcode to the upper four bits
     inst->opcode |= (reg  - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;    
 }
@@ -166,7 +166,7 @@ bool parse_loadp(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= 0x3000; // add the opcode to the upper four bits
     inst->opcode |= (reg  - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -190,7 +190,7 @@ bool parse_add(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= (reg0 - 'A') << 10;
     inst->opcode |= (reg1 - 'A') << 8;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -211,7 +211,7 @@ bool parse_addi(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= 0x5000;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -235,7 +235,7 @@ bool parse_sub(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= (reg0 - 'A') << 10;
     inst->opcode |= (reg1 - 'A') << 8;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -256,7 +256,7 @@ bool parse_subi(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= 0x7000;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -265,10 +265,21 @@ bool parse_load(char *line, int line_num, ParsedInstruction *inst) {
     add_inst_name(inst, "LOAD");
 
     char reg;
-    uint8_t daddress;
-    if(sscanf(line, " %*s %c , [ %hhu ] ", &reg, &daddress) < 2) {
-        printf("Missing register or data address for LOAD instruction on line %d, compilation aborting...\n", line_num);
-        return false;
+    char sym = -1;
+    uint8_t daddress = 0;
+    uint8_t offset = 0;
+    sscanf(line, " %*s %*c, [ %*u %c", &sym);
+    if(sym == ']') {
+        if(sscanf(line, " %*s %c , [ %hhu ] ", &reg, &daddress) < 2) {
+            printf("Missing register or data address for LOAD instruction on line %d, compilation aborting...\n", line_num);
+            return false;
+        }
+        sym = '+';
+    } else {
+        if(sscanf(line, " %*s %c , [ %hhu %c %hhu ]", &reg, &daddress, &sym, &offset) < 4) {
+            printf("Missing register or data address for LOAD instruction on line %d, compilation aborting...\n", line_num);
+            return false;
+        }
     }
 
     if(!check_regs(reg)) {
@@ -276,11 +287,20 @@ bool parse_load(char *line, int line_num, ParsedInstruction *inst) {
         return false;
     }
 
+    if(sym == '+') {
+        daddress += offset;
+    } else if(sym == '-') {
+        daddress -= offset;
+    } else {
+        printf("Invalid operation %c specified for LOAD instruction address on line %d, compilation aborting...\n", sym, line_num);
+        return false;
+    }
+
     inst->opcode = daddress;
     inst->opcode |= 0x8000;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -326,7 +346,7 @@ bool parse_loadf(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= (reg0 - 'A') << 10;
     inst->opcode |= (reg1 - 'A') << 8;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -335,10 +355,21 @@ bool parse_store(char *line, int line_num, ParsedInstruction *inst) {
     add_inst_name(inst, "STORE");
 
     char reg;
-    uint8_t daddress;
-    if(sscanf(line, " %*s [ %hhu ], %c ", &daddress, &reg) < 2) {
-        printf("Missing register or data address for STORE instruction on line %d, compilation aborting...\n", line_num);
-        return false;
+    char sym = -1;
+    uint8_t daddress = 0;
+    uint8_t offset = 0;
+    sscanf(line, "%*s [ %*u %c", &sym);
+    if(sym == ']') {
+        if(sscanf(line, " %*s [ %hhu ], %c ", &daddress, &reg) < 2) {
+            printf("Missing register or data address for STORE instruction on line %d, compilation aborting...\n", line_num);
+            return false;
+        }
+        sym = '+'; // prevents errors later
+    } else {
+        if(sscanf(line, " %*s [ %hhu %c %hhu ], %c ", &daddress, &sym, &offset, &reg) < 4) {
+            printf("Missing register or data address for STORE instruction on line %d, compilation aborting...\n", line_num);
+            return false;
+        }
     }
 
     if(!check_regs(reg)) {
@@ -346,11 +377,20 @@ bool parse_store(char *line, int line_num, ParsedInstruction *inst) {
         return false;
     }
 
+    if(sym == '+') {
+        daddress += offset;
+    } else if(sym == '-') {
+        daddress -= offset;
+    } else {
+        printf("Invalid operation %c specified for STORE instruction address on line %d, compilation aborting...\n", sym, line_num);
+        return false;
+    }
+
     inst->opcode = daddress;
     inst->opcode |= 0xA000;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -408,7 +448,7 @@ bool parse_storef(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= (reg0 - 'A') << 10;
     inst->opcode |= (reg1 - 'A') << 8;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -427,7 +467,7 @@ bool parse_shiftl(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = 0xC000;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -446,7 +486,7 @@ bool parse_shiftr(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = 0xC100;
     inst->opcode |= (reg - 'A') << 10;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -470,7 +510,7 @@ bool parse_cmp(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode |= (reg0 - 'A') << 10;
     inst->opcode |= (reg1 - 'A') << 8;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -487,7 +527,7 @@ bool parse_jump(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xE000;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -504,7 +544,7 @@ bool parse_bre(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xF000;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -521,7 +561,7 @@ bool parse_brz(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xF000;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -538,7 +578,7 @@ bool parse_brne(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xF100;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -555,7 +595,7 @@ bool parse_brnz(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xF100;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -572,7 +612,7 @@ bool parse_brg(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xF200;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
@@ -589,7 +629,7 @@ bool parse_brge(char *line, int line_num, ParsedInstruction *inst) {
     inst->opcode = pcoffset;
     inst->opcode |= 0xF300;
 
-    printf("%d: 0x%04x\n", line_num, inst->opcode);
+    // printf("%d: 0x%04x\n", line_num, inst->opcode);
 
     return true;
 }
