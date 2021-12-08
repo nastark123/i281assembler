@@ -5,7 +5,6 @@
 #include <string.h>
 #include <errno.h>
 #include "instructions.h"
-#include "vector.h"
 
 #define DSEG_SIZE 16
 #define CSEG_SIZE 64
@@ -58,12 +57,6 @@ typedef struct {
     char *name;
     uint8_t address;
 } BranchDest;
-
-// vector that will store the data segment
-IntVector dseg;
-
-// vector that will store the opcodes (code segment)
-IntVector cseg;
 
 int parse_dseg(char **lines, int offset, int lines_len, DataLabel *labels, int labels_len) {
     offset++; // skip the segment declaration
@@ -366,10 +359,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // initialize the vectors
-    create_new(&dseg, NULL, 16);
-    create_new(&cseg, NULL, 64);
-
     // find number of lines in program so that we can parse line by line
     int num_lines = 0;
     char c;
@@ -426,7 +415,7 @@ int main(int argc, char *argv[]) {
     }
 
     // array to store parsed instructions
-    ParsedInstruction *inst = malloc(sizeof(ParsedInstruction) * 64);
+    ParsedInstruction *inst = malloc(sizeof(ParsedInstruction) * CSEG_SIZE);
     int num_insts = 0;
 
     // array to store branch destinations
